@@ -1,0 +1,17 @@
+target/
+*.class
+.DS_Store
+.settings/
+.project
+.classpath
+bin/
+.idea/
+*.iml
+.DS_Store
+*.log
+.gemini/
+.agent/
+.agents/
+.system_generated/
+src/main/webapp/WEB-INF/serviceAccountKey.json
+src/main/resources/serviceAccountKey.json
