@@ -20,6 +20,18 @@ import java.util.concurrent.CompletableFuture;
 @WebServlet("/auth")
 public class AuthServlet extends HttpServlet {
 
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        System.out.println("Processing GET request to AuthServlet...");
+        String action = request.getParameter("action");
+        if ("logout".equals(action)) {
+            request.getSession().invalidate();
+            response.sendRedirect("login.jsp");
+        } else {
+            response.sendRedirect("login.jsp");
+        }
+    }
+
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         String action = request.getParameter("action");
@@ -111,6 +123,7 @@ public class AuthServlet extends HttpServlet {
                     user.put("name", name);
                     user.put("email", email);
                     user.put("password", password); // In a real app, use hashing!
+                    user.put("role", "user"); // Default role
 
                     usersRef.child(userId).setValue(user, (error, ref) -> {
                         if (error == null) {
@@ -160,9 +173,19 @@ public class AuthServlet extends HttpServlet {
                     if (password.equals(storedPassword)) {
                         HttpSession session = request.getSession();
                         session.setAttribute("user", email);
-                        session.setAttribute("userName", snapshot.child("name").getValue(String.class));
+                        String userName = snapshot.child("name").getValue(String.class);
+                        String role = snapshot.child("role").getValue(String.class);
+                        if (role == null) role = "user"; // Fallback for existing users
+
+                        session.setAttribute("userName", userName);
+                        session.setAttribute("role", role);
+
                         try {
-                            response.sendRedirect("index.jsp");
+                            if ("admin".equals(role)) {
+                                response.sendRedirect("admin_dashboard.jsp");
+                            } else {
+                                response.sendRedirect("index.jsp");
+                            }
                         } catch (IOException e) {
                             future.completeExceptionally(e);
                         }

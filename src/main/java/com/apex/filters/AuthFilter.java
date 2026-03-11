@@ -31,6 +31,7 @@ public class AuthFilter implements Filter {
 
         // Pages that don't require authentication
         boolean isPublicPage = path.endsWith("login.jsp") || 
+                               path.endsWith("admin_login.jsp") || 
                                path.endsWith("register.jsp") || 
                                path.equals("/auth") ||
                                path.startsWith("/css/") || 
@@ -38,6 +39,16 @@ public class AuthFilter implements Filter {
                                path.startsWith("/images/");
 
         boolean isLoggedIn = (session != null && session.getAttribute("user") != null);
+        String userRole = (session != null) ? (String) session.getAttribute("role") : null;
+
+        // Admin page protection (excluding the login page itself)
+        boolean isAdminPage = path.startsWith("/admin_") && !path.endsWith("admin_login.jsp");
+        boolean isAdmin = "admin".equals(userRole);
+
+        if (isAdminPage && !isAdmin) {
+            httpResponse.sendRedirect(httpRequest.getContextPath() + "/login.jsp?error=unauthorized");
+            return;
+        }
 
         if (isLoggedIn || isPublicPage) {
             chain.doFilter(request, response);

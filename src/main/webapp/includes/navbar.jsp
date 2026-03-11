@@ -8,6 +8,10 @@
                 <ul class="navbar-links">
                     <li><a href="index.jsp">Home</a></li>
                     <li><a href="dashboard.jsp">My Hub</a></li>
+                    <% if ("admin".equals(session.getAttribute("role"))) { %>
+                        <li><a href="admin_dashboard.jsp" style="color:var(--danger); font-weight:700;">Admin Panel</a>
+                        </li>
+                        <% } %>
                 </ul>
             </div>
 
