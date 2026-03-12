@@ -36,6 +36,14 @@ public class SearchServlet extends HttpServlet {
             data.put("productName", query);
             data.put("date", java.time.LocalDateTime.now().toString());
             ref.child(key).setValueAsync(data);
+
+            // Log activity
+            jakarta.servlet.http.HttpSession session = request.getSession();
+            String userEmail = (String) session.getAttribute("user");
+            String userName = (String) session.getAttribute("userName");
+            if (userEmail != null) {
+                AdminServlet.logActivity(userEmail, userName, "Search", "Searched for: " + query);
+            }
         } catch (Exception e) {
             System.err.println("Firebase RTDB Error: " + e.getMessage());
         }

@@ -33,6 +33,18 @@ public class DetailsServlet extends HttpServlet {
 
         System.out.println("Deep Analysis for: " + query);
 
+        // Log activity
+        try {
+            jakarta.servlet.http.HttpSession session = request.getSession();
+            String userEmail = (String) session.getAttribute("user");
+            String userName = (String) session.getAttribute("userName");
+            if (userEmail != null) {
+                AdminServlet.logActivity(userEmail, userName, "Product Analysis", "Viewed deep analysis for: " + query);
+            }
+        } catch (Exception e) {
+            System.err.println("Activity Logging Error: " + e.getMessage());
+        }
+
         // 1. Scrape live data from both platforms
         ScraperEngine scraper = new ScraperEngine();
         Map<String, List<ScrapedProduct>> byPlatform = scraper.scrapeMarketByPlatform(query);

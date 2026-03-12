@@ -22,10 +22,16 @@ public class AuthServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        System.out.println("Processing GET request to AuthServlet...");
         String action = request.getParameter("action");
         if ("logout".equals(action)) {
-            request.getSession().invalidate();
+            HttpSession logoutSession = request.getSession(false);
+            if (logoutSession != null) {
+                String logEmail = (String) logoutSession.getAttribute("user");
+                String logName  = (String) logoutSession.getAttribute("userName");
+                AdminServlet.logActivity(logEmail, logName != null ? logName : "User",
+                        "LOGOUT", "User session ended");
+                logoutSession.invalidate();
+            }
             response.sendRedirect("login.jsp");
         } else {
             response.sendRedirect("login.jsp");
@@ -43,7 +49,14 @@ public class AuthServlet extends HttpServlet {
         } else if ("login".equals(action)) {
             handleLogin(request, response, email, password);
         } else if ("logout".equals(action)) {
-            request.getSession().invalidate();
+            HttpSession logoutSession = request.getSession(false);
+            if (logoutSession != null) {
+                String logEmail = (String) logoutSession.getAttribute("user");
+                String logName  = (String) logoutSession.getAttribute("userName");
+                AdminServlet.logActivity(logEmail, logName != null ? logName : "User",
+                        "LOGOUT", "User session ended");
+                logoutSession.invalidate();
+            }
             response.sendRedirect("login.jsp");
         } else if ("update".equals(action)) {
             handleUpdate(request, response, email, password);
@@ -160,6 +173,9 @@ public class AuthServlet extends HttpServlet {
 
     private void handleLogin(HttpServletRequest request, HttpServletResponse response, String email, String password) 
             throws IOException, ServletException {
+        String source = request.getParameter("source");
+        final String errorPage = "admin".equals(source) ? "admin_login.jsp" : "login.jsp";
+
         DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users");
         String userId = email.replace(".", "_");
 
@@ -180,9 +196,14 @@ public class AuthServlet extends HttpServlet {
                         session.setAttribute("userName", userName);
                         session.setAttribute("role", role);
 
+                        // Log the login activity
+                        final String finalRole = role;
+                        AdminServlet.logActivity(email, userName != null ? userName : email,
+                                "LOGIN", "User logged in with role: " + role);
+
                         try {
-                            if ("admin".equals(role)) {
-                                response.sendRedirect("admin_dashboard.jsp");
+                            if ("admin".equals(finalRole)) {
+                                response.sendRedirect("admin_dashboard"); // Go through servlet so data loads
                             } else {
                                 response.sendRedirect("index.jsp");
                             }
@@ -192,7 +213,7 @@ public class AuthServlet extends HttpServlet {
                     } else {
                         request.setAttribute("error", "Invalid email or password.");
                         try {
-                            request.getRequestDispatcher("login.jsp").forward(request, response);
+                            request.getRequestDispatcher(errorPage).forward(request, response);
                         } catch (Exception e) {
                             future.completeExceptionally(e);
                         }
@@ -200,7 +221,7 @@ public class AuthServlet extends HttpServlet {
                 } else {
                     request.setAttribute("error", "Email not found. Please sign up first.");
                     try {
-                        request.getRequestDispatcher("login.jsp").forward(request, response);
+                        request.getRequestDispatcher(errorPage).forward(request, response);
                     } catch (Exception e) {
                         future.completeExceptionally(e);
                     }
